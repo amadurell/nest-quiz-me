@@ -1,0 +1,19 @@
+
+# Characters ruler:                           50^                 70^ 
+
+# Please write an identifying title for the commit, under 50 characters.
+
+# Describe why this commit is created in the body of this message, one
+# line below the subject wrapping at 70 characters. Keep things tidy! 
+
+# Feel free to use multiple paragraphs and other formatting to describe 
+# the commit. Add details as necessary until you have provided enough info
+# about the commit. This will help other members of the team further up
+# on the road.
+
+#    - Bullets can be added
+#    - So long as they're consistent
+    
+# Also track included work items using their GitHub issue numbers. Ex:
+
+# Work Items Resolved: 557, 188, 122 
