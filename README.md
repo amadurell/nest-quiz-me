@@ -10,6 +10,34 @@ A REST API that can be used to create, edit and delete Trivia games with questio
 $ pnpm install
 ```
 
+## Initializing PostgreSQL DB image on Docker
+
+You will need Docker Desktop up and running in your computer in order to start this app. Please refer to [Docker Desktop](https://www.docker.com/products/docker-desktop) for more information.
+
+It is recommended practice not to commit .env files with credentials and other parameters required for running the app, but one such file is required to instantiate the database as a docker image and provide those same parameters to the app itself. Creating a file named .env (at app root level) containing the following information will suffice:
+
+```bash
+DOCKER_IMAGE=postgres
+DOCKER_RESTART=always
+
+DATABASE_TYPE=postgres
+DATABASE_USER=postgres
+DATABASE_PASSWORD=Fortuna Major
+DATABASE_NAME=postgres
+DATABASE_PORT=5432
+DATABASE_HOST=localhost
+
+TYPEORM_SYNCHRONIZE=true
+```
+
+IMPORTANT: set the latter parameter to false in PRODUCTION environments.
+
+Save the .env file, then launch the DB image in detached mode with:
+
+```bash
+$ docker-compose up -d nestquizmedb
+```
+
 ## Running the app
 
 ```bash
