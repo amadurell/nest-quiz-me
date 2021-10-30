@@ -48,7 +48,7 @@ export class QuizzesRepository {
     const questions = providedQuizDto.questions;
     if (!questions || questions.length < 1) {
       throw new BadRequestException(
-        `The provided Quiz ${providedQuizDto.name} should contain at least one question.`,
+        `The provided Quiz “${providedQuizDto.name}” should contain at least one question.`,
       );
     }
     // Now, make sure each question contains exactly 4 valid answers
@@ -67,7 +67,7 @@ export class QuizzesRepository {
         .reduce((previous, current) => previous + current);
       if (thereCanBeOnlyOne !== 1) {
         throw new BadRequestException(
-          `The provided Quiz's question: “${question.statement}” must contain 1 and only 1 true answer.`,
+          `The provided Quiz's question “${question.statement}” must contain 1 and only 1 true answer.`,
         );
       }
       // My eyes! My eeeyes!! But the ORM refactor will fix this too
@@ -105,7 +105,7 @@ export class QuizzesRepository {
 
     if (!quiz) {
       throw new NotFoundException(
-        `No quiz with id ${id} exists in the collection.`,
+        `No quiz with id “${id}” exists in the collection.`,
       );
     }
 
@@ -136,7 +136,7 @@ export class QuizzesRepository {
       let msg:string;
       switch(err.response.statusCode) {
         case HttpStatus.NOT_FOUND:
-          msg = `Quiz id ${id} doesn't match any existing record. Please verify the provided update data.`;
+          msg = `Quiz id “${id}” doesn't match any existing record. Please verify the provided update data.`;
           break;
         default:
           msg = err.response.message;
@@ -155,7 +155,7 @@ export class QuizzesRepository {
       return;
     } catch (err) {
       throw new BadRequestException(
-        `Can't delete a record which doesn't exist. Please verify and fix the id ${id}.`,
+        `Can't delete a record which doesn't exist. Please verify and fix the id “${id}”.`,
       );
     }
   }
