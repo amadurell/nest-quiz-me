@@ -44,13 +44,24 @@ export class QuizzesRepository {
   // This hurts my eyes, but... for now, let's just place a big bulky
   //  all-in validation function for both create and update methods
   validateInput(providedQuizDto: CreateQuizDto | UpdateQuizDto): Quiz {
+    // Keep non whitelisted parameters out of bay
+    if (
+      Object.keys(providedQuizDto).length >
+      +!!providedQuizDto['id'] + +!!providedQuizDto.name + +!!providedQuizDto.questions
+    ) {
+      throw new BadRequestException(
+        `Malformed data. Please verify the parameters sent in the request body.`,
+      );
+    }
+
     // Make sure there's at least one question in that Dto
-    const questions = providedQuizDto.questions;
+    const questions = providedQuizDto.questions as Question[];
     if (!questions || questions.length < 1) {
       throw new BadRequestException(
         `The provided Quiz “${providedQuizDto.name}” should contain at least one question.`,
       );
     }
+
     // Now, make sure each question contains exactly 4 valid answers
     // This control will be refactored into its own QuestionsRepository class
     for (let question of questions) {
@@ -90,6 +101,10 @@ export class QuizzesRepository {
   }
 
   async create(createQuizDto: CreateQuizDto): Promise<Quiz> {
+    // Let's prevent forcing an id parameter (potentially malicious) in the request object
+    if (!!createQuizDto['id']) {
+      throw new BadRequestException(`A new quiz shouldn't already have an id. Were you trying to update Quiz with id “${createQuizDto['id']}”?`);
+    } 
     let newQuiz = this.validateInput(createQuizDto);
     // Don't forget to add it to the on-memory collection, and return it... as promised
     this.quizzes[newQuiz.id] = newQuiz;
@@ -113,6 +128,10 @@ export class QuizzesRepository {
   }
 
   async update(id: string, updateQuizDto: UpdateQuizDto) {
+    // Let's make sure id matches the one within the update object
+    if (!!updateQuizDto['id'] && id!==updateQuizDto['id']) {
+      throw new BadRequestException(`Quiz id “${id}” doesn't match the update object's id “${updateQuizDto['id']}”.`);
+    } 
     // By wrapping the this.findOne call in a try catch we can throw a 400 Bad Request
     //  instead of the 404 Not Found triggered by the findOne function itself, or other
     //  messages if it's any validation step that fails instead
@@ -122,19 +141,19 @@ export class QuizzesRepository {
       // Still, for the validation function to work, we need to pass the entire Quiz, not just its
       //  patched properties and values. If the patch doesn't contain a modified set of questions,
       //  it will keep its previous one.
-      // But if it contains a modified set of questions, it shall replace the previous one at face 
+      // But if it contains a modified set of questions, it shall replace the previous one at face
       //  value (i.e., if a previous question is missing, we assume the user wants to delete it,
-      //  not leave it as it was before the patch request, and the same goes for their answers). 
+      //  not leave it as it was before the patch request, and the same goes for their answers).
       let updatedQuiz = this.validateInput({
         ...oldQuiz,
-        ...updateQuizDto
+        ...updateQuizDto,
       } as UpdateQuizDto);
       // Update the in-memory collection
       this.quizzes[updatedQuiz.id] = updatedQuiz;
       return Promise.resolve(updatedQuiz);
     } catch (err) {
-      let msg:string;
-      switch(err.response.statusCode) {
+      let msg: string;
+      switch (err.response.statusCode) {
         case HttpStatus.NOT_FOUND:
           msg = `Quiz id “${id}” doesn't match any existing record. Please verify the provided update data.`;
           break;

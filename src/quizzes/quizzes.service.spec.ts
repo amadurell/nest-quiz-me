@@ -1,7 +1,11 @@
 import { QuestionsRepository } from './questions.repository';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { CreateQuizDto } from './dto/create-quiz.dto';
-import { BadRequestException, HttpStatus, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { Quiz } from './entities/quiz.entity';
 import { QuizzesRepository } from './quizzes.repository';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -76,15 +80,47 @@ describe('QuizzesService', () => {
       because of the validation pipe and entities decorators, hence, validating this in the repository
       is not implemented, so a create request thrown from here would fly even without a name.
     */
-    describe('a quiz with no questions', () => {
+    describe('with potentially malicious data in it', () => {
       it('should throw a "BadRequestException"', async () => {
+        const badDto = { ...quizDto, id: `105 OR 1=1` };
         try {
-          badDto = {name:quizDto.name};
           await service.create(badDto as CreateQuizDto);
           fail(`We shouldn't be here!`);
         } catch (err) {
           expect(err).toBeInstanceOf(BadRequestException);
-          expect(err.message).toEqual(`The provided Quiz “${quizDto.name}” should contain at least one question.`);
+          expect(err.message).toEqual(
+            `A new quiz shouldn't already have an id. Were you trying to update Quiz with id “${badDto['id']}”?`,
+          );
+          expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
+        }
+      });
+    });
+    describe('with non whitelisted data in it', () => {
+      it('should throw a "BadRequestException"', async () => {
+        const badDto = { ...quizDto, poteito: `potato` };
+        try {
+          await service.create(badDto as CreateQuizDto);
+          fail(`We shouldn't be here!`);
+        } catch (err) {
+          expect(err).toBeInstanceOf(BadRequestException);
+          expect(err.message).toEqual(
+            `Malformed data. Please verify the parameters sent in the request body.`,
+          );
+          expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
+        }
+      });
+    });
+    describe('a quiz with no questions', () => {
+      it('should throw a "BadRequestException"', async () => {
+        try {
+          badDto = { name: quizDto.name };
+          await service.create(badDto as CreateQuizDto);
+          fail(`We shouldn't be here!`);
+        } catch (err) {
+          expect(err).toBeInstanceOf(BadRequestException);
+          expect(err.message).toEqual(
+            `The provided Quiz “${quizDto.name}” should contain at least one question.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
         }
       });
@@ -92,12 +128,17 @@ describe('QuizzesService', () => {
     describe('a quiz with no answers', () => {
       it('should throw a "BadRequestException"', async () => {
         try {
-          badDto = {name:quizDto.name, questions: [{statement:quizDto.questions[0].statement}]};
+          badDto = {
+            name: quizDto.name,
+            questions: [{ statement: quizDto.questions[0].statement }],
+          };
           await service.create(badDto as CreateQuizDto);
           fail(`We shouldn't be here!`);
         } catch (err) {
           expect(err).toBeInstanceOf(BadRequestException);
-          expect(err.message).toEqual(`The provided Quiz's question “${quizDto.questions[0].statement}” should contain exactly 4 answers.`);
+          expect(err.message).toEqual(
+            `The provided Quiz's question “${quizDto.questions[0].statement}” should contain exactly 4 answers.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
         }
       });
@@ -106,17 +147,26 @@ describe('QuizzesService', () => {
       it('should throw a "BadRequestException"', async () => {
         try {
           badDto = {
-            name:quizDto.name, 
-            questions: [{
-              statement:quizDto.questions[0].statement, 
-              answers: [{...quizDto.questions[0].answers[0],isCorrect:true}, quizDto.questions[0].answers[1], quizDto.questions[0].answers[2], quizDto.questions[0].answers[3]]
-            }]
+            name: quizDto.name,
+            questions: [
+              {
+                statement: quizDto.questions[0].statement,
+                answers: [
+                  { ...quizDto.questions[0].answers[0], isCorrect: true },
+                  quizDto.questions[0].answers[1],
+                  quizDto.questions[0].answers[2],
+                  quizDto.questions[0].answers[3],
+                ],
+              },
+            ],
           };
           await service.create(badDto as CreateQuizDto);
           fail(`We shouldn't be here!`);
         } catch (err) {
           expect(err).toBeInstanceOf(BadRequestException);
-          expect(err.message).toEqual(`The provided Quiz's question “${quizDto.questions[0].statement}” must contain 1 and only 1 true answer.`);
+          expect(err.message).toEqual(
+            `The provided Quiz's question “${quizDto.questions[0].statement}” must contain 1 and only 1 true answer.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
         }
       });
@@ -125,17 +175,26 @@ describe('QuizzesService', () => {
       it('should throw a "BadRequestException"', async () => {
         try {
           badDto = {
-            name:quizDto.name, 
-            questions: [{
-              statement:quizDto.questions[0].statement, 
-              answers: [quizDto.questions[0].answers[0], quizDto.questions[0].answers[1], {...quizDto.questions[0].answers[2],isCorrect:false}, quizDto.questions[0].answers[3]]
-            }]
+            name: quizDto.name,
+            questions: [
+              {
+                statement: quizDto.questions[0].statement,
+                answers: [
+                  quizDto.questions[0].answers[0],
+                  quizDto.questions[0].answers[1],
+                  { ...quizDto.questions[0].answers[2], isCorrect: false },
+                  quizDto.questions[0].answers[3],
+                ],
+              },
+            ],
           };
           await service.create(badDto as CreateQuizDto);
           fail(`We shouldn't be here!`);
         } catch (err) {
           expect(err).toBeInstanceOf(BadRequestException);
-          expect(err.message).toEqual(`The provided Quiz's question “${quizDto.questions[0].statement}” must contain 1 and only 1 true answer.`);
+          expect(err.message).toEqual(
+            `The provided Quiz's question “${quizDto.questions[0].statement}” must contain 1 and only 1 true answer.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
         }
       });
@@ -162,7 +221,9 @@ describe('QuizzesService', () => {
           await service.findOne(`NOT${quiz.id}`);
         } catch (err) {
           expect(err).toBeInstanceOf(NotFoundException);
-          expect(err.message).toEqual(`No quiz with id “NOT${quiz.id}” exists in the collection.`);
+          expect(err.message).toEqual(
+            `No quiz with id “NOT${quiz.id}” exists in the collection.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.NOT_FOUND);
         }
       });
@@ -173,48 +234,71 @@ describe('QuizzesService', () => {
     describe('with a name patch', () => {
       it('should return the updated quiz', async () => {
         const updatedName = `Ultimate quiz of life`;
-        quiz = await service.update(quiz.id, {name: updatedName} as UpdateQuizDto);
+        quiz = await service.update(quiz.id, {
+          name: updatedName,
+        } as UpdateQuizDto);
         expect(quiz.name).toEqual(updatedName);
       });
     });
     describe('with a questions patch', () => {
       it('should return the updated quiz', async () => {
-        const updatedQuestions = [{...quizDto.questions[0], statement: `The answer to the ultimate question of life, the universe, and everything.`}];
-        quiz = await service.update(quiz.id, {...quizDto, questions: updatedQuestions} as UpdateQuizDto);
+        const updatedQuestions = [
+          {
+            ...quizDto.questions[0],
+            statement: `The answer to the ultimate question of life, the universe, and everything.`,
+          },
+        ];
+        quiz = await service.update(quiz.id, {
+          ...quizDto,
+          questions: updatedQuestions,
+        } as UpdateQuizDto);
         expect(quiz.questions).toEqual(updatedQuestions);
       });
     });
-    // This right here is why unit tests are so necessary:
-    //  While trying to get it to fail by replacing "questions" with "preguntas" on a patch request,
-    //  it would simply let it through, no error, except the forced fail instruction. 
-    // Running that same test through postman, the resulting quiz ended up containing both the previous 
-    //  questions set and a new preguntas one.
-    // This will be fixed with the refactor. And could be fixed before adding a database, by placing 
-    //  each entities logic and validation where it should be, implementing cascading updates by hand,
-    //  simulating stopable/"rollbackable" transactions, etc.
-    // 
-    // describe('with a quiz with no questions', () => {
-    //   it('should throw a "BadRequestException"', async () => {
-    //     try {
-    //       badDto = {name:quizDto.name, preguntas:quizDto.questions};
-    //       await service.update(quiz.id, badDto as UpdateQuizDto);
-    //       fail(`We shouldn't be here!`);
-    //     } catch (err) {
-    //       expect(err).toBeInstanceOf(BadRequestException);
-    //       expect(err.message).toEqual(`The provided Quiz “${quizDto.name}” should contain at least one question.`);
-    //       expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
-    //     }
-    //   });
-    // });
-    describe('with a quiz with no answers', () => {
+    describe('with potentially malicious data in it', () => {
       it('should throw a "BadRequestException"', async () => {
         try {
-          badDto = {name:quizDto.name, questions: [{statement:quizDto.questions[0].statement}]};
+          badDto = { ...quizDto, id: `105 OR 1=1` };
           await service.update(quiz.id, badDto as UpdateQuizDto);
           fail(`We shouldn't be here!`);
         } catch (err) {
           expect(err).toBeInstanceOf(BadRequestException);
-          expect(err.message).toEqual(`The provided Quiz's question “${quizDto.questions[0].statement}” should contain exactly 4 answers.`);
+          expect(err.message).toEqual(
+            `Quiz id “${quiz.id}” doesn't match the update object's id “${badDto['id']}”.`,
+          );
+          expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
+        }
+      });
+    });
+    describe('with non whitelisted data in it', () => {
+      it('should throw a "BadRequestException"', async () => {
+        try {
+          badDto = { ...quizDto, poteito: `potato` };
+          await service.update(quiz.id, badDto as UpdateQuizDto);
+          fail(`We shouldn't be here!`);
+        } catch (err) {
+          expect(err).toBeInstanceOf(BadRequestException);
+          expect(err.message).toEqual(
+            `Malformed data. Please verify the parameters sent in the request body.`,
+          );
+          expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
+        }
+      });
+    });
+    describe('with a quiz with no answers', () => {
+      it('should throw a "BadRequestException"', async () => {
+        try {
+          badDto = {
+            name: quizDto.name,
+            questions: [{ statement: quizDto.questions[0].statement }],
+          };
+          await service.update(quiz.id, badDto as UpdateQuizDto);
+          fail(`We shouldn't be here!`);
+        } catch (err) {
+          expect(err).toBeInstanceOf(BadRequestException);
+          expect(err.message).toEqual(
+            `The provided Quiz's question “${quizDto.questions[0].statement}” should contain exactly 4 answers.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
         }
       });
@@ -223,17 +307,26 @@ describe('QuizzesService', () => {
       it('should throw a "BadRequestException"', async () => {
         try {
           badDto = {
-            name:quizDto.name, 
-            questions: [{
-              statement:quizDto.questions[0].statement, 
-              answers: [{...quizDto.questions[0].answers[0],isCorrect:true}, quizDto.questions[0].answers[1], quizDto.questions[0].answers[2], quizDto.questions[0].answers[3]]
-            }]
+            name: quizDto.name,
+            questions: [
+              {
+                statement: quizDto.questions[0].statement,
+                answers: [
+                  { ...quizDto.questions[0].answers[0], isCorrect: true },
+                  quizDto.questions[0].answers[1],
+                  quizDto.questions[0].answers[2],
+                  quizDto.questions[0].answers[3],
+                ],
+              },
+            ],
           };
           await service.update(quiz.id, badDto as UpdateQuizDto);
           fail(`We shouldn't be here!`);
         } catch (err) {
           expect(err).toBeInstanceOf(BadRequestException);
-          expect(err.message).toEqual(`The provided Quiz's question “${quizDto.questions[0].statement}” must contain 1 and only 1 true answer.`);
+          expect(err.message).toEqual(
+            `The provided Quiz's question “${quizDto.questions[0].statement}” must contain 1 and only 1 true answer.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
         }
       });
@@ -242,17 +335,26 @@ describe('QuizzesService', () => {
       it('should throw a "BadRequestException"', async () => {
         try {
           badDto = {
-            name:quizDto.name, 
-            questions: [{
-              statement:quizDto.questions[0].statement, 
-              answers: [quizDto.questions[0].answers[0], quizDto.questions[0].answers[1], {...quizDto.questions[0].answers[2],isCorrect:false}, quizDto.questions[0].answers[3]]
-            }]
+            name: quizDto.name,
+            questions: [
+              {
+                statement: quizDto.questions[0].statement,
+                answers: [
+                  quizDto.questions[0].answers[0],
+                  quizDto.questions[0].answers[1],
+                  { ...quizDto.questions[0].answers[2], isCorrect: false },
+                  quizDto.questions[0].answers[3],
+                ],
+              },
+            ],
           };
           await service.update(quiz.id, badDto as UpdateQuizDto);
           fail(`We shouldn't be here!`);
         } catch (err) {
           expect(err).toBeInstanceOf(BadRequestException);
-          expect(err.message).toEqual(`The provided Quiz's question “${quizDto.questions[0].statement}” must contain 1 and only 1 true answer.`);
+          expect(err.message).toEqual(
+            `The provided Quiz's question “${quizDto.questions[0].statement}” must contain 1 and only 1 true answer.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
         }
       });
@@ -260,16 +362,19 @@ describe('QuizzesService', () => {
     describe('with a valid quiz patch but the wrong id', () => {
       it('should throw a "BadRequestException"', async () => {
         try {
-          await service.update(quiz.id+quiz.id, quizDto);
+          await service.update(quiz.id + quiz.id, quizDto);
           fail(`We shouldn't be here!`);
         } catch (err) {
           expect(err).toBeInstanceOf(BadRequestException);
-          expect(err.message).toEqual(`Quiz id “${quiz.id+quiz.id}” doesn't match any existing record. Please verify the provided update data.`);
+          expect(err.message).toEqual(
+            `Quiz id “${
+              quiz.id + quiz.id
+            }” doesn't match any existing record. Please verify the provided update data.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
         }
       });
     });
-
   });
 
   describe(`delete`, () => {
@@ -281,7 +386,9 @@ describe('QuizzesService', () => {
           fail(`We shouldn't be here!`);
         } catch (err) {
           expect(err).toBeInstanceOf(NotFoundException);
-          expect(err.message).toEqual(`No quiz with id “${quiz.id}” exists in the collection.`);
+          expect(err.message).toEqual(
+            `No quiz with id “${quiz.id}” exists in the collection.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.NOT_FOUND);
         }
       });
@@ -292,11 +399,12 @@ describe('QuizzesService', () => {
           await service.remove(`NOT${quiz.id}`);
         } catch (err) {
           expect(err).toBeInstanceOf(BadRequestException);
-          expect(err.message).toEqual(`Can't delete a record which doesn't exist. Please verify and fix the id “NOT${quiz.id}”.`);
+          expect(err.message).toEqual(
+            `Can't delete a record which doesn't exist. Please verify and fix the id “NOT${quiz.id}”.`,
+          );
           expect(err.response.statusCode).toEqual(HttpStatus.BAD_REQUEST);
         }
       });
     });
   });
-
 });
