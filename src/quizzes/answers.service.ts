@@ -1,26 +1,48 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AnswersRepository } from './answers.repository';
 import { CreateAnswerDto } from './dto/create-answer.dto';
 import { UpdateAnswerDto } from './dto/update-answer.dto';
+import { Answer } from './entities/answer.entity';
 
 @Injectable()
 export class AnswersService {
-  create(createAnswerDto: CreateAnswerDto) {
-    return 'This action adds a new answer';
+  constructor(
+    @InjectRepository(Answer)
+    private readonly answersRepository: AnswersRepository
+  ) {}
+
+  async create(createAnswerDto: CreateAnswerDto) {
+    const answer = this.answersRepository.create(createAnswerDto);
+    return this.answersRepository.save(answer);
   }
 
-  findAll() {
-    return `This action returns all answers`;
+  async findAll() {
+    return this.answersRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} answer`;
+  async findOne(id: string) {
+    const answer = await this.answersRepository.findOne(id);
+    if (!answer) {
+      throw new NotFoundException(`No answer with id “${id}” exists in the collection.`);
+    }
+    return answer;
   }
 
-  update(id: number, updateAnswerDto: UpdateAnswerDto) {
-    return `This action updates a #${id} answer`;
+  async update(id: string, updateAnswerDto: UpdateAnswerDto) {
+    const answer = await this.answersRepository.preload({
+      id,
+      ...updateAnswerDto
+    });
+
+    if (!answer) {
+      throw new NotFoundException(`No answer with id “${id}” exists in the collection.`);
+    }
+    return this.answersRepository.save(answer);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} answer`;
+  async remove(id: string) {
+    const answer = await this.findOne(id);
+    return this.answersRepository.remove(answer);
   }
 }

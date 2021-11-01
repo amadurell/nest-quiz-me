@@ -1,3 +1,4 @@
+import { EntityRepository, Repository } from 'typeorm';
 import { UpdateAnswerDto } from './dto/update-answer.dto';
 import { CreateAnswerDto } from './dto/create-answer.dto';
 import { readFile, writeFile } from 'fs/promises';
@@ -8,68 +9,62 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-/*
-  This class will be decorated with @EntityRepository(Answer)
-  and made it extend Repository<Answer> when refactoring for ORM
-  For now I'll just make it @Injectable
-  All operations shall cascade through ORM as well, but we'll add
-  all this code manually.
-*/
-@Injectable()
-export class AnswersRepository {
-  async create(createAnswerDto: CreateAnswerDto): Promise<Answer> {
-      /* 
-        Might be a bit excessive here, but I'm planning on 
-        using uuid when introducing ORM, so I'll start generating 
-        the id manually here. This message shall be erased with 
-        that refactor anyways
-      */
-      const id = randomUUID();
 
-      let answer = {
-        id,
-        ...createAnswerDto,
-      };
+@EntityRepository(Answer)
+export class AnswersRepository extends Repository<Answer> {
+  // async create(createAnswerDto: CreateAnswerDto): Promise<Answer> {
+  //     /* 
+  //       Might be a bit excessive here, but I'm planning on 
+  //       using uuid when introducing ORM, so I'll start generating 
+  //       the id manually here. This message shall be erased with 
+  //       that refactor anyways
+  //     */
+  //     const id = randomUUID();
 
-      return Promise.resolve(answer as Answer);
-  }
+  //     let answer = {
+  //       id,
+  //       ...createAnswerDto,
+  //     };
 
-  async findAll(): Promise<Answer[]> {
+  //     return Promise.resolve(answer as Answer);
+  // }
+
+  // async findAll(): Promise<Answer[]> {
     
-    try {
-      const file = await readFile('Answers.json', 'utf8');
-      const Answers = JSON.parse(file);
+  //   try {
+  //     const file = await readFile('Answers.json', 'utf8');
+  //     const Answers = JSON.parse(file);
 
-      return Promise.resolve(Answers as Answer[]);
-    } catch (err) {
-      throw new NotFoundException(err.errno);
-    }
-  }
+  //     return Promise.resolve(Answers as Answer[]);
+  //   } catch (err) {
+  //     throw new NotFoundException(err.errno);
+  //   }
+  // }
 
-  async findOne(id: string): Promise<Answer> {
-    let Answer: Answer;
-    try {
-      const file = await readFile('Answers.json', 'utf8');
-      const Answers = JSON.parse(file);
-      Answer = Answers[id] as Answer;
-    } catch (err) {
-      throw new NotFoundException(err.errno);
-    }
+  // async findOne(id: string): Promise<Answer> {
+  //   let Answer: Answer;
+  //   try {
+  //     const file = await readFile('Answers.json', 'utf8');
+  //     const Answers = JSON.parse(file);
+  //     Answer = Answers[id] as Answer;
+  //   } catch (err) {
+  //     throw new NotFoundException(err.errno);
+  //   }
 
-    if (!Answer) {
-      throw new NotFoundException(
-        `No Answer with id ${id} exists in the collection.`,
-      );
-    }
+  //   if (!Answer) {
+  //     throw new NotFoundException(
+  //       `No Answer with id ${id} exists in the collection.`,
+  //     );
+  //   }
 
-    return Promise.resolve(Answer);
-  }
+  //   return Promise.resolve(Answer);
+  // }
 
-  async update(id: string, updateAnswerDto: UpdateAnswerDto) {
-    return `This action updates a #${id} Answer`;
-  }
+  // async update(id: string, updateAnswerDto: UpdateAnswerDto) {
+  //   return `This action updates a #${id} Answer`;
+  // }
 
-  async remove(id: string) {
-    return `This action removes a #${id} Answer`;
-  }
+  // async remove(id: string) {
+  //   return `This action removes a #${id} Answer`;
+  // }
 }

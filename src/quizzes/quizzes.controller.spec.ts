@@ -1,6 +1,6 @@
-import { QuizzesRepository } from './quizzes.repository';
 import { Test, TestingModule } from '@nestjs/testing';
 import { QuizzesController } from './quizzes.controller';
+import { QuizzesRepository } from './quizzes.repository';
 import { QuizzesService } from './quizzes.service';
 
 describe('QuizzesController', () => {

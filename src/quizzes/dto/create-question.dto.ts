@@ -1,13 +1,21 @@
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsString, ValidateNested } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsDefined,
+  IsNotEmpty,
+  IsString,
+} from 'class-validator';
 import { Answer } from './../entities/answer.entity';
 
 export class CreateQuestionDto {
+  @IsDefined()
+  @IsNotEmpty()
   @IsString()
   readonly statement: string;
-  
+
   @IsArray()
   @ArrayMinSize(4)
   @ArrayMaxSize(4)
-  @ValidateNested()
   readonly answers: Answer[];
 }
